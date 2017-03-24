@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Noisetab</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link href="tab.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="wrapper">
+    <canvas class="visualizer" width="800" height="160"></canvas>
+    <div class="mode">
+      <select id="visual-setting" name="visual">
+        <option value="oscilloscope">Oscilloscope</option>
+        <option value="spectrum" selected>Spectrum Analyzer</option>
+        <option value="off">None</option>
+      </select>
+    </div>
+  </div>
+  <script src="tab.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+
+  "name": "sonorama",
+  "description": "Replace default new tab page in Chrome with realtime audio visualizer.",
+  "version": "1.0",
+
+  "chrome_url_overrides" : {
+    "newtab": "tab.html"
+  },
+  "permissions": [
+    "bookmarks",
+    "audioCapture"
+  ]
+}

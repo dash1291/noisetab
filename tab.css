@@ -1,0 +1,28 @@
+html {
+	height: 100%;
+}
+
+body {
+	width: 100%;
+  margin: 0;
+	height: inherit;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  height: 100%;
+	max-width: 100%;
+}
+
+.mode {
+  align-self: flex-end;
+  margin: 0 10px 10px 0;
+}
+
+canvas {
+  align-self: center;
+  margin-top: 100px;
+  display: block;
+}
