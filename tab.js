@@ -34,7 +34,6 @@ var drawVisual;
 
 //main block for doing the audio recording
 if (navigator.getUserMedia) {
-   console.log('getUserMedia supported.');
    navigator.getUserMedia (
       // constraints - only audio needed for this app
       {
@@ -43,17 +42,19 @@ if (navigator.getUserMedia) {
 
       // Success callback
       function(stream) {
-         source = audioCtx.createMediaStreamSource(stream);
-         source.connect(analyser);
-         analyser.connect(distortion);
-         distortion.connect(biquadFilter);
-         biquadFilter.connect(convolver);
-         convolver.connect(gainNode);
-         gainNode.connect(audioCtx.destination);
+				source = audioCtx.createMediaStreamSource(stream);
+				source.connect(analyser);
+				analyser.connect(distortion);
+				distortion.connect(biquadFilter);
+				biquadFilter.connect(convolver);
+				convolver.connect(gainNode);
+				gainNode.connect(audioCtx.destination);
 
-      	 visualize();
-         voiceChange();
-
+				chrome.storage.sync.get('visualSetting', function(items) {
+          var visualSetting = items.visualSetting || 'spectrum';
+          document.querySelector('#visual-setting').value = visualSetting;
+					visualize(items.visualSetting || 'spectrum');
+				});
       },
 
       // Error callback
@@ -65,12 +66,9 @@ if (navigator.getUserMedia) {
    console.log('getUserMedia not supported on your browser!');
 }
 
-function visualize() {
+function visualize(visualSetting) {
   WIDTH = canvas.width;
   HEIGHT = canvas.height;
-
-  var visualSetting = document.querySelector('#visual-setting').value;
-  console.log(visualSetting);
 
   if (visualSetting === 'oscilloscope') {
     analyser.fftSize = 2048;
@@ -156,7 +154,9 @@ function visualize() {
   }
 }
 
-document.querySelector('#visual-setting').onchange = function() {
+document.querySelector('#visual-setting').onchange = function(e) {
+  var visualSetting = e.target.value;
+	chrome.storage.sync.set({'visualSetting': visualSetting});
   window.cancelAnimationFrame(drawVisual);
-  visualize();
+  visualize(visualSetting);
 };
