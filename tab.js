@@ -1,9 +1,7 @@
 // fork getUserMedia for multiple browser versions, for those
 // that need prefixes
 navigator.getUserMedia = (navigator.getUserMedia ||
-                          navigator.webkitGetUserMedia ||
-                          navigator.mozGetUserMedia ||
-                          navigator.msGetUserMedia);
+                          navigator.webkitGetUserMedia);
 
 // set up forked web audio context, for multiple browsers
 // window. is needed otherwise Safari explodes
@@ -42,19 +40,19 @@ if (navigator.getUserMedia) {
 
       // Success callback
       function(stream) {
-				source = audioCtx.createMediaStreamSource(stream);
-				source.connect(analyser);
-				analyser.connect(distortion);
-				distortion.connect(biquadFilter);
-				biquadFilter.connect(convolver);
-				convolver.connect(gainNode);
-				gainNode.connect(audioCtx.destination);
+        source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.connect(distortion);
+        distortion.connect(biquadFilter);
+        biquadFilter.connect(convolver);
+        convolver.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-				chrome.storage.sync.get('visualSetting', function(items) {
+        chrome.storage.sync.get('visualSetting', function(items) {
           var visualSetting = items.visualSetting || 'spectrum';
           document.querySelector('#visual-setting').value = visualSetting;
-					visualize(items.visualSetting || 'spectrum');
-				});
+          visualize(items.visualSetting || 'spectrum');
+        });
       },
 
       // Error callback
@@ -70,9 +68,67 @@ function visualize(visualSetting) {
   WIDTH = canvas.width;
   HEIGHT = canvas.height;
 
-  if (visualSetting === 'oscilloscope') {
+  if (visualSetting === 'circular') {
+    analyser.fftSize = 512;
+    var hiClip = 50;
+    var loClip = 100;
+    var bufferLength = analyser.frequencyBinCount - hiClip;
+    var dataArray = new Uint8Array(bufferLength);
+    var angularStep = (2 * Math.PI) / (bufferLength - loClip);
+
+    function draw() {
+      drawVisual = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+
+      canvasCtx.fillStyle = 'rgb(255, 255, 255)';
+      canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      var barWidth = (WIDTH / bufferLength) * 0.5;
+      var barHeight;
+      var x = WIDTH / 2;
+      var y = HEIGHT / 2;
+      var angle = 0;
+      var x1, y1, x2, y2;
+
+      var steadyRadius = 150;
+
+      const lowFreqAvg = dataArray.slice(0, loClip).reduce(function(sum, bin) {
+          return sum + bin
+      }) / loClip
+
+      radius = Math.max(
+        steadyRadius, lowFreqAvg + 50
+      );
+
+      var unitSize = 20/100;
+      var rCos, rSin;
+      canvasCtx.lineWidth = 1;
+
+      for(var i = 0; i < bufferLength; i++) {
+          barHeight = dataArray[i + loClip] * unitSize + 1;
+          rCos = Math.cos(i * angularStep);
+          rSin = Math.sin(i * angularStep);
+          x1 = x + ((radius - barHeight) * rCos);
+          y1 = y + ((radius - barHeight) * rSin);
+          x2 = x1 + (2 * barHeight * rCos);
+          y2 = y1 + (2 * barHeight * rSin);
+
+          canvasCtx.beginPath();
+          canvasCtx.strokeStyle = 'rgb(' + barHeight * 12 + ', 140, 100)';
+          canvasCtx.moveTo(x1, y1);
+          canvasCtx.lineTo(x2, y2);
+          canvasCtx.stroke();
+
+          angle += angularStep;
+      }
+
+    };
+
+    draw();
+  } else if (visualSetting === 'oscilloscope') {
     analyser.fftSize = 2048;
     var bufferLength = analyser.fftSize;
+    var maxHeight = 160;
     console.log(bufferLength);
     var dataArray = new Uint8Array(bufferLength);
 
@@ -98,7 +154,7 @@ function visualize(visualSetting) {
       for (var i = 0; i < bufferLength; i++) {
 
         var v = dataArray[i] / 128.0;
-        var y = v * HEIGHT/2;
+        var y = v * maxHeight/2;
 
         if (i === 0) {
           canvasCtx.moveTo(x, y);
@@ -109,7 +165,7 @@ function visualize(visualSetting) {
         x += sliceWidth;
       }
 
-      canvasCtx.lineTo(canvas.width, canvas.height/2);
+      canvasCtx.lineTo(canvas.width, maxHeight/2);
       canvasCtx.stroke();
     };
 
@@ -117,8 +173,8 @@ function visualize(visualSetting) {
 
   } else if (visualSetting === 'spectrum') {
     analyser.fftSize = 256;
+    var maxHeight = 160;
     var bufferLength = analyser.frequencyBinCount;
-    console.log(bufferLength);
     var dataArray = new Uint8Array(bufferLength);
 
     canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -139,7 +195,7 @@ function visualize(visualSetting) {
         barHeight = dataArray[i];
 
         canvasCtx.fillStyle = 'rgb(' + (barHeight) + ','+ barHeight + ',' + barHeight + ')';
-        canvasCtx.fillRect(x,HEIGHT-barHeight/2,barWidth,barHeight/2);
+        canvasCtx.fillRect(x,maxHeight-barHeight/2,barWidth,barHeight/2);
 
         x += barWidth + 1;
       }
@@ -156,7 +212,7 @@ function visualize(visualSetting) {
 
 document.querySelector('#visual-setting').onchange = function(e) {
   var visualSetting = e.target.value;
-	chrome.storage.sync.set({'visualSetting': visualSetting});
+  chrome.storage.sync.set({'visualSetting': visualSetting});
   window.cancelAnimationFrame(drawVisual);
   visualize(visualSetting);
 };

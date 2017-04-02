@@ -3,7 +3,7 @@
 
   "name": "Noisetab",
   "description": "Replace default new tab page in Chrome with realtime audio visualizer.",
-  "version": "0.3",
+  "version": "0.4",
 
   "chrome_url_overrides" : {
     "newtab": "tab.html"
